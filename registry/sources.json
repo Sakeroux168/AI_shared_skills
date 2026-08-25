@@ -1,0 +1,58 @@
+{
+  "$schema": "./source.schema.json",
+  "schema_version": "1.0.0",
+  "sources": [
+    {
+      "id": "awesome-gpt-image-2",
+      "repository": "https://github.com/freestylefly/awesome-gpt-image-2",
+      "branch": "main",
+      "commit": "685469889fb72fd5adefae45e1645d527edcb5e7",
+      "sync_mode": "review",
+      "author": "freestylefly",
+      "license": {
+        "spdx": "MIT",
+        "copyright": "Copyright (c) 2026 freestylefly",
+        "file": "sources/awesome-gpt-image-2/LICENSE",
+        "verified_from": "LICENSE at the locked upstream commit"
+      },
+      "snapshot": {
+        "path": "sources/awesome-gpt-image-2/snapshot",
+        "selection": "curated",
+        "includes": [
+          "upstream skill package and metadata",
+          "data/style-library.json",
+          "data/cases.json",
+          "docs/templates.md",
+          "style skill generation and install scripts",
+          "category and template cover assets required by the generator",
+          "upstream publish workflow and READMEs"
+        ],
+        "excluded_but_managed": [
+          {
+            "content": "non-template gallery image binaries",
+            "reason": "large binary gallery is not required for prompt lookup",
+            "manifest": "sources/awesome-gpt-image-2/case-images.lock.json",
+            "hydration": "python scripts/sync_upstream.py --to-commit <sha> --with-case-images"
+          },
+          {
+            "content": "website, API, billing, and deployment runtime",
+            "reason": "not a dependency of the professional skill"
+          }
+        ]
+      },
+      "update_strategy": {
+        "detect": "git ls-remote against the configured branch",
+        "sync": "allowlisted snapshot refresh plus generated active reference",
+        "review": "draft pull request",
+        "rollback": "revert the synchronization pull request",
+        "auto_merge": false
+      },
+      "local_modifications": [
+        "active skill points to a local source knowledge layer with immutable upstream fallback URLs",
+        "generated reference links are pinned to the locked commit",
+        "registry, deterministic lookup, tests, and safe install/update tooling are added",
+        "large optional case images are represented by a blob-locked manifest unless explicitly hydrated"
+      ]
+    }
+  ]
+}

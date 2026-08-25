@@ -1,0 +1,89 @@
+{
+  "$schema": "./skill.schema.json",
+  "schema_version": "1.0.0",
+  "skills": [
+    {
+      "name": "gpt-image-2-style-library",
+      "description": "Choose repository-backed GPT-Image2 template categories, visual styles, scene tags, example cases, and prompt constraints; use for classifying, creating, rewriting, or improving image-generation prompts.",
+      "source_repository": "https://github.com/freestylefly/awesome-gpt-image-2",
+      "upstream_branch": "main",
+      "upstream_commit": "685469889fb72fd5adefae45e1645d527edcb5e7",
+      "local": {
+        "version": "1.0.0",
+        "status": "active"
+      },
+      "category": "image-generation/prompt-engineering",
+      "capabilities": [
+        "template classification",
+        "visual style selection",
+        "scene tag selection",
+        "structured image prompt construction",
+        "full template lookup",
+        "case prompt lookup",
+        "prompt constraint and pitfall guidance"
+      ],
+      "dependencies": {
+        "agent_runtime": "plain Markdown skill with progressive references",
+        "required_runtime_packages": [],
+        "optional_tools": [
+          "Python 3.10+ for deterministic registry lookup and validation",
+          "Git for pinned source updates"
+        ]
+      },
+      "knowledge_source": {
+        "source_id": "awesome-gpt-image-2",
+        "bundled_reference": "skills/gpt-image-2-style-library/references/style-library.md",
+        "full_templates": "sources/awesome-gpt-image-2/snapshot/docs/templates.md",
+        "structured_library": "sources/awesome-gpt-image-2/snapshot/data/style-library.json",
+        "complete_cases": "sources/awesome-gpt-image-2/snapshot/data/cases.json",
+        "case_asset_manifest": "sources/awesome-gpt-image-2/case-images.lock.json",
+        "source_guide": "skills/gpt-image-2-style-library/references/source-knowledge.md"
+      },
+      "update_strategy": {
+        "mode": "review",
+        "detect": "python scripts/check_upstream.py --json",
+        "sync": "python scripts/sync_upstream.py --to-commit <sha>",
+        "branch_prefix": "sync/gpt-image-2-style-library-",
+        "requires_tests": true,
+        "requires_pull_request": true,
+        "auto_merge": false
+      },
+      "compatible_harnesses": [
+        {
+          "name": "Codex",
+          "status": "verified",
+          "scope": "repository structure, explicit skill use, deterministic acceptance, isolated install"
+        },
+        {
+          "name": "Claude Code",
+          "status": "theoretical",
+          "scope": "plain Markdown and tested install copy; runtime unavailable"
+        },
+        {
+          "name": "Hermes",
+          "status": "unknown",
+          "scope": "Windows runtime and discovery path unavailable"
+        },
+        {
+          "name": "DeepSeek Harness",
+          "status": "unknown",
+          "scope": "Windows runtime and discovery path unavailable"
+        },
+        {
+          "name": "generic .agents/skills",
+          "status": "verified",
+          "scope": "isolated filesystem contract and file integrity"
+        }
+      ],
+      "trust_status": "trusted",
+      "trust_evidence": [
+        "source commit and MIT license pinned",
+        "repository validation and six automated tests passed",
+        "five-domain isolated Codex forward acceptance passed",
+        "all cited template IDs, tags, cases, anchors, and paths were verified",
+        "manual image-output and Windows harness acceptance tracked separately",
+        "reports/acceptance/2026-08-26-v1.md"
+      ]
+    }
+  ]
+}

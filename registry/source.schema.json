@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Sakeroux168/AI_shared_skills/registry/source.schema.json",
+  "title": "AI shared source registry",
+  "type": "object",
+  "required": ["schema_version", "sources"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "repository",
+          "branch",
+          "commit",
+          "sync_mode",
+          "license",
+          "author",
+          "snapshot",
+          "update_strategy"
+        ],
+        "properties": {
+          "id": {"type": "string"},
+          "repository": {"type": "string"},
+          "branch": {"type": "string"},
+          "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "sync_mode": {"enum": ["review", "manual", "disabled"]},
+          "license": {"type": "object"},
+          "author": {"type": "string"},
+          "snapshot": {"type": "object"},
+          "update_strategy": {"type": "object"}
+        }
+      }
+    }
+  }
+}
+

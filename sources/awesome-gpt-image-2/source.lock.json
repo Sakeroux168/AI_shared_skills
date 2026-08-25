@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0.0",
+  "source_id": "awesome-gpt-image-2",
+  "repo": "https://github.com/freestylefly/awesome-gpt-image-2",
+  "branch": "main",
+  "commit": "685469889fb72fd5adefae45e1645d527edcb5e7",
+  "sync_mode": "review",
+  "snapshot_policy": "curated-text-plus-required-covers",
+  "synced_at": "2026-08-25T16:46:23.534264+00:00"
+}
