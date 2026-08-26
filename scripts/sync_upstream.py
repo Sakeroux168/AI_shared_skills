@@ -37,6 +37,7 @@ CURATED_PATHS = [
     "agents/skills/gpt-image-2-style-library/references/style-library.md",
     "data/cases.json",
     "data/style-library.json",
+    "docs/disclaimer.md",
     "docs/templates.md",
     "scripts/generate-style-skill.mjs",
     "scripts/install-style-skill.mjs",
@@ -48,6 +49,14 @@ DOCS_WITH_LOCK = [
     REPO_ROOT / "SOURCES.md",
     REPO_ROOT / "THIRD_PARTY_NOTICES.md",
 ]
+
+COUNT_LABELS = {
+    "templates": "Templates",
+    "categories": "Categories",
+    "styles": "Style tags",
+    "scenes": "Scene tags",
+    "cases": "Case prompts",
+}
 
 
 def run(command: list[str], *, cwd: Path | None = None) -> str:
@@ -79,6 +88,73 @@ def load_json(path: Path) -> Any:
 def write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def knowledge_counts(library: dict[str, Any], cases: dict[str, Any]) -> dict[str, int]:
+    return {
+        "templates": len(library["templates"]),
+        "categories": len(library["categories"]),
+        "styles": len(library["styles"]),
+        "scenes": len(library["scenes"]),
+        "cases": len(cases["cases"]),
+    }
+
+
+def current_knowledge_counts() -> dict[str, int] | None:
+    library_path = SNAPSHOT_DIR / "data" / "style-library.json"
+    cases_path = SNAPSHOT_DIR / "data" / "cases.json"
+    if not library_path.is_file() or not cases_path.is_file():
+        return None
+    return knowledge_counts(load_json(library_path), load_json(cases_path))
+
+
+def format_knowledge_count_table(
+    previous: dict[str, int] | None,
+    current: dict[str, int],
+) -> str:
+    rows = ["| Metric | Previous | New | Delta |", "|---|---:|---:|---:|"]
+    for key, label in COUNT_LABELS.items():
+        old = previous.get(key) if previous is not None else None
+        new = current[key]
+        old_text = str(old) if old is not None else "n/a"
+        delta_text = f"{new - old:+d}" if old is not None else "n/a"
+        rows.append(f"| {label} | {old_text} | {new} | {delta_text} |")
+    return "\n".join(rows)
+
+
+def apply_upstream_commit(
+    skills_registry: dict[str, Any],
+    sources_registry: dict[str, Any],
+    *,
+    source_id: str,
+    old_commit: str,
+    commit: str,
+) -> list[str]:
+    source = next(item for item in sources_registry["sources"] if item["id"] == source_id)
+    source["commit"] = commit
+    affected: list[str] = []
+    for skill in skills_registry["skills"]:
+        if skill.get("knowledge_source", {}).get("source_id") != source_id:
+            continue
+        skill["upstream_commit"] = commit
+        affected.append(skill["name"])
+        if old_commit != commit:
+            skill["trust_status"] = "experimental"
+            skill["trust_review"] = {
+                "reason": "upstream_commit_changed",
+                "required_after_commit": commit,
+                "promotion": "explicit reviewed commit after all required automated and manual acceptance",
+            }
+            evidence = [
+                item
+                for item in skill.get("trust_evidence", [])
+                if not item.startswith("Automatically downgraded after upstream commit change")
+            ]
+            evidence.append(
+                f"Automatically downgraded after upstream commit change to {commit}; acceptance and explicit promotion pending"
+            )
+            skill["trust_evidence"] = evidence
+    return affected
 
 
 def assert_review_branch(allow_default_branch: bool) -> str:
@@ -241,15 +317,24 @@ The active source is freestylefly/awesome-gpt-image-2, branch main, commit {comm
 From this skill directory, the complete managed knowledge is available at:
 
 - ../../sources/awesome-gpt-image-2/snapshot/docs/templates.md
+- ../../sources/awesome-gpt-image-2/snapshot/docs/disclaimer.md
 - ../../sources/awesome-gpt-image-2/snapshot/data/style-library.json
 - ../../sources/awesome-gpt-image-2/snapshot/data/cases.json
 - ../../sources/awesome-gpt-image-2/case-images.lock.json
 
 Use style-library.json for exact IDs and tag values. Use templates.md for full reusable prompt templates and pitfalls. Use cases.json to find close examples and their original source attribution. The case image manifest distinguishes vendored covers from optional remotely managed images.
 
+## Rights boundary
+
+The upstream repository license is not blanket clearance for community-sourced prompts, generated
+images, trademarks, likenesses, or referenced works. Read docs/disclaimer.md, preserve case
+sourceLabel/sourceUrl and source-specific terms, and do not claim commercial-use permission without
+authorization from the applicable rights holder.
+
 ## Standalone immutable fallbacks
 
 - Templates: https://github.com/freestylefly/awesome-gpt-image-2/blob/{commit}/docs/templates.md
+- Disclaimer: https://github.com/freestylefly/awesome-gpt-image-2/blob/{commit}/docs/disclaimer.md
 - Structured library: https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/{commit}/data/style-library.json
 - Cases: https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/{commit}/data/cases.json
 - Upstream skill: https://github.com/freestylefly/awesome-gpt-image-2/tree/{commit}/agents/skills/gpt-image-2-style-library
@@ -262,20 +347,23 @@ Do not replace the commit with main. The controlled sync script regenerates this
     )
 
 
-def update_registries(old_commit: str, commit: str) -> None:
+def update_registries(old_commit: str, commit: str) -> list[str]:
     skills = load_json(SKILLS_REGISTRY)
-    skill = next(item for item in skills["skills"] if item["name"] == "gpt-image-2-style-library")
-    skill["upstream_commit"] = commit
-    write_json(SKILLS_REGISTRY, skills)
-
     sources = load_json(SOURCES_REGISTRY)
-    source = next(item for item in sources["sources"] if item["id"] == "awesome-gpt-image-2")
-    source["commit"] = commit
+    affected = apply_upstream_commit(
+        skills,
+        sources,
+        source_id="awesome-gpt-image-2",
+        old_commit=old_commit,
+        commit=commit,
+    )
+    write_json(SKILLS_REGISTRY, skills)
     write_json(SOURCES_REGISTRY, sources)
 
     for path in DOCS_WITH_LOCK:
         text = path.read_text(encoding="utf-8")
         path.write_text(text.replace(old_commit, commit), encoding="utf-8")
+    return affected
 
 
 def write_report(
@@ -285,6 +373,8 @@ def write_report(
     branch: str,
     library: dict[str, Any],
     cases: dict[str, Any],
+    previous_counts: dict[str, int] | None,
+    affected_skills: list[str],
     with_case_images: bool,
 ) -> Path:
     now = datetime.now(timezone.utc)
@@ -300,6 +390,12 @@ def write_report(
             ).strip() or "No allowlisted path changed."
         except subprocess.CalledProcessError:
             changes = "Unable to compute the old-to-new allowlist diff; review the branch diff."
+    current_counts = knowledge_counts(library, cases)
+    trust_transition = (
+        ", ".join(f"{name} -> experimental" for name in affected_skills)
+        if old_commit != commit
+        else "No commit change; trust status unchanged."
+    )
     content = f"""# Upstream synchronization report
 
 - Source: freestylefly/awesome-gpt-image-2
@@ -310,13 +406,16 @@ def write_report(
 - Generated: {now.isoformat()}
 - Full case image hydration: {str(with_case_images).lower()}
 
-## Knowledge counts
+## Knowledge count changes
 
-- Templates: {len(library['templates'])}
-- Categories: {len(library['categories'])}
-- Style tags: {len(library['styles'])}
-- Scene tags: {len(library['scenes'])}
-- Case prompts: {len(cases['cases'])}
+{format_knowledge_count_table(previous_counts, current_counts)}
+
+Count changes are review information, not fixed validation limits. Structural integrity, references,
+manifests, and source links must still validate.
+
+## Trust transition
+
+{trust_transition}
 
 ## Allowlisted upstream changes
 
@@ -327,7 +426,10 @@ def write_report(
 - Inspect upstream SKILL.md and generator changes against the active integration skill.
 - Inspect template/category/tag changes and case additions or removals.
 - Run repository validation and the five prompt acceptance scenarios.
-- Keep the skill experimental when a required acceptance item is not complete.
+- A changed upstream commit automatically downgrades every affected skill to experimental.
+- Complete the prescribed automated and manual acceptance, then promote to trusted only in an
+  explicit reviewed commit that binds trust_attestation to the exact Skill and new commit and
+  removes the pending trust_review record.
 - Open a draft PR; do not merge automatically.
 """
     report_path.write_text(content, encoding="utf-8")
@@ -341,6 +443,7 @@ def synchronize(args: argparse.Namespace) -> Path:
     assert_clean(args.allow_dirty)
     lock = load_json(LOCK_PATH)
     old_commit = lock["commit"]
+    previous_counts = current_knowledge_counts()
 
     checkout_context = ensure_checkout(
         lock["repo"],
@@ -358,7 +461,7 @@ def synchronize(args: argparse.Namespace) -> Path:
             with_case_images=args.with_case_images,
         )
         update_active_skill(args.to_commit)
-        update_registries(old_commit, args.to_commit)
+        affected_skills = update_registries(old_commit, args.to_commit)
         lock["commit"] = args.to_commit
         lock["synced_at"] = datetime.now(timezone.utc).isoformat()
         write_json(LOCK_PATH, lock)
@@ -369,6 +472,8 @@ def synchronize(args: argparse.Namespace) -> Path:
             branch,
             library,
             cases,
+            previous_counts,
+            affected_skills,
             args.with_case_images,
         )
     raise RuntimeError("Unable to prepare an upstream checkout")

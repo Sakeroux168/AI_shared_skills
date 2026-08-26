@@ -42,7 +42,15 @@
           "category": {"type": "string"},
           "capabilities": {"type": "array", "items": {"type": "string"}},
           "dependencies": {"type": "object"},
-          "knowledge_source": {"type": "object"},
+          "knowledge_source": {
+            "type": "object",
+            "required": ["source_id", "bundled_reference", "source_guide"],
+            "properties": {
+              "source_id": {"type": "string"},
+              "bundled_reference": {"type": "string"},
+              "source_guide": {"type": "string"}
+            }
+          },
           "update_strategy": {"type": "object"},
           "compatible_harnesses": {
             "type": "array",
@@ -55,10 +63,35 @@
               }
             }
           },
-          "trust_status": {"enum": ["trusted", "experimental", "disabled"]}
+          "trust_status": {"enum": ["trusted", "experimental", "disabled"]},
+          "trust_review": {
+            "type": "object",
+            "required": ["reason", "required_after_commit", "promotion"],
+            "properties": {
+              "reason": {"enum": ["upstream_commit_changed"]},
+              "required_after_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+              "promotion": {"type": "string"}
+            }
+          },
+          "trust_attestation": {
+            "type": "object",
+            "required": [
+              "skill_name",
+              "accepted_commit",
+              "acceptance_report",
+              "accepted_at",
+              "scope"
+            ],
+            "properties": {
+              "skill_name": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+              "accepted_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+              "acceptance_report": {"type": "string"},
+              "accepted_at": {"type": "string"},
+              "scope": {"type": "string"}
+            }
+          }
         }
       }
     }
   }
 }
-

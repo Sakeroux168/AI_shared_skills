@@ -24,7 +24,9 @@ The integration has two layers:
 
 ## Discover and use a skill
 
-1. Search [registry/skills.json](registry/skills.json) by capability, category, or status.
+1. Search [registry/skills.json](registry/skills.json) by capability, category, or status. The
+   registry is an extensible array: each Skill is validated independently against its Source and
+   lock; the repository is not limited to one Skill.
 2. Load only the selected skill's SKILL.md.
 3. Use its compact bundled reference for normal work.
 4. Read the linked source knowledge only when exact templates or cases are needed.
@@ -46,10 +48,16 @@ Upstream changes never overwrite main. The supported flow is:
 1. compare the locked commit with upstream main;
 2. create a sync/... branch;
 3. refresh only the reviewed snapshot allowlist and generated indexes;
-4. run repository and prompt acceptance tests;
-5. write a sync report;
-6. open a draft PR for review;
-7. merge manually, then treat the new commit as locked.
+4. automatically downgrade every affected Skill to experimental when the commit changes;
+5. run structural, rights-metadata, and prompt acceptance tests;
+6. write a sync report containing previous/new knowledge counts and deltas;
+7. open a draft PR for review;
+8. complete required manual acceptance and explicitly promote the Skill in a reviewed commit;
+9. merge manually, then treat the new commit as locked.
+
+Template, category, style, scene, and case totals are observed upstream inventory, not permanent
+validation constants. Changes appear in the sync report for Review; broken structure, references,
+source locks, manifests, or attribution still fail validation.
 
 Run detection locally with:
 
@@ -66,9 +74,15 @@ Automated acceptance covers UI/App, poster, product/commercial, infographic, and
 
 ## Licensing
 
-The imported upstream content is MIT-licensed and retains the original copyright and license text. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the source-specific [license](sources/awesome-gpt-image-2/LICENSE). Local modifications are listed in the source record. No repository-wide license for original files is asserted by this V1.
+The upstream repository declares MIT and its license text is preserved, but this repository does
+not treat that declaration as blanket permission for every community-sourced prompt, generated
+image, trademark, likeness, or referenced work. Those elements may have separate or unknown
+rights, and upstream does not guarantee commercial usability. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), the preserved
+[upstream disclaimer](sources/awesome-gpt-image-2/snapshot/docs/disclaimer.md), and the
+source-specific [repository license](sources/awesome-gpt-image-2/LICENSE). No repository-wide
+license for locally authored files is asserted by this V1.
 
 ## Relationship with AI_chat_skill
 
 AI_chat_skill remains the lightweight collaboration/routing layer and keeps its ten V1.1 global skills. It should discover professional capabilities through this repository's registry rather than hard-code mappings such as image → one skill or video → another skill. V1 does not copy this professional skill into AI_chat_skill.
-

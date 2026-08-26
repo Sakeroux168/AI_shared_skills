@@ -10,10 +10,19 @@
       "sync_mode": "review",
       "author": "freestylefly",
       "license": {
-        "spdx": "MIT",
-        "copyright": "Copyright (c) 2026 freestylefly",
-        "file": "sources/awesome-gpt-image-2/LICENSE",
-        "verified_from": "LICENSE at the locked upstream commit"
+        "repository_license": {
+          "spdx": "MIT",
+          "copyright": "Copyright (c) 2026 freestylefly",
+          "file": "sources/awesome-gpt-image-2/LICENSE",
+          "verified_from": "LICENSE at the locked upstream commit"
+        },
+        "content_rights": {
+          "status": "separate-or-unknown",
+          "upstream_disclaimer": "sources/awesome-gpt-image-2/snapshot/docs/disclaimer.md",
+          "scope": "The upstream repository license is recorded without asserting that every community-sourced prompt, generated image, referenced work, trademark, likeness, or other third-party element is MIT-licensed.",
+          "attribution": "Preserve each case source label and source URL when present, plus any source-specific license or platform terms.",
+          "commercial_use": "Not guaranteed. Review the upstream disclaimer and obtain authorization from the applicable original rights holder before commercial use."
+        }
       },
       "snapshot": {
         "path": "sources/awesome-gpt-image-2/snapshot",
@@ -22,6 +31,7 @@
           "upstream skill package and metadata",
           "data/style-library.json",
           "data/cases.json",
+          "docs/disclaimer.md",
           "docs/templates.md",
           "style skill generation and install scripts",
           "category and template cover assets required by the generator",
@@ -51,7 +61,8 @@
         "active skill points to a local source knowledge layer with immutable upstream fallback URLs",
         "generated reference links are pinned to the locked commit",
         "registry, deterministic lookup, tests, and safe install/update tooling are added",
-        "large optional case images are represented by a blob-locked manifest unless explicitly hydrated"
+        "large optional case images are represented by a blob-locked manifest unless explicitly hydrated",
+        "upstream disclaimer and separate third-party content-rights status are preserved without blanket MIT relicensing"
       ]
     }
   ]

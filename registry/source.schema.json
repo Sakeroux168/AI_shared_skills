@@ -27,7 +27,45 @@
           "branch": {"type": "string"},
           "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
           "sync_mode": {"enum": ["review", "manual", "disabled"]},
-          "license": {"type": "object"},
+          "license": {
+            "type": "object",
+            "required": ["repository_license", "content_rights"],
+            "properties": {
+              "repository_license": {
+                "type": "object",
+                "required": ["spdx", "file", "verified_from"],
+                "properties": {
+                  "spdx": {"type": "string"},
+                  "copyright": {"type": "string"},
+                  "file": {"type": "string"},
+                  "verified_from": {"type": "string"}
+                }
+              },
+              "content_rights": {
+                "type": "object",
+                "required": [
+                  "status",
+                  "upstream_disclaimer",
+                  "scope",
+                  "attribution",
+                  "commercial_use"
+                ],
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "repository-license-applies",
+                      "mixed",
+                      "separate-or-unknown"
+                    ]
+                  },
+                  "upstream_disclaimer": {"type": "string"},
+                  "scope": {"type": "string"},
+                  "attribution": {"type": "string"},
+                  "commercial_use": {"type": "string"}
+                }
+              }
+            }
+          },
           "author": {"type": "string"},
           "snapshot": {"type": "object"},
           "update_strategy": {"type": "object"}
@@ -36,4 +74,3 @@
     }
   }
 }
-

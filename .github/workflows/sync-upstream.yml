@@ -68,4 +68,4 @@ jobs:
             --base main \
             --head "$BRANCH" \
             --title "sync: awesome-gpt-image-2 ${REMOTE_COMMIT:0:12}" \
-            --body "Controlled upstream refresh to $REMOTE_COMMIT. Automated integrity and five-domain prompt acceptance passed. Review source, skill, manifest, attribution, and sync report before merging. Auto-merge is not enabled."
+            --body "Controlled upstream refresh to $REMOTE_COMMIT. Affected skills were automatically downgraded to experimental. Automated integrity and five-domain prompt tests passed, but required manual acceptance and an explicit reviewed promotion with a commit-bound trust attestation are still required before trusted status. Review source, rights metadata, skill, manifest, attribution, and the knowledge-count delta in the sync report. Auto-merge is not enabled."

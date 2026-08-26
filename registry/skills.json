@@ -76,9 +76,16 @@
         }
       ],
       "trust_status": "trusted",
+      "trust_attestation": {
+        "skill_name": "gpt-image-2-style-library",
+        "accepted_commit": "685469889fb72fd5adefae45e1645d527edcb5e7",
+        "acceptance_report": "reports/acceptance/2026-08-26-v1.md",
+        "accepted_at": "2026-08-26",
+        "scope": "repository structure, rights metadata, deterministic prompt capability, source integrity, and isolated Codex acceptance"
+      },
       "trust_evidence": [
-        "source commit and MIT license pinned",
-        "repository validation and six automated tests passed",
+        "source commit, upstream repository MIT license, disclaimer, and separate third-party rights metadata pinned",
+        "repository validation and sixteen automated tests passed",
         "five-domain isolated Codex forward acceptance passed",
         "all cited template IDs, tags, cases, anchors, and paths were verified",
         "manual image-output and Windows harness acceptance tracked separately",
