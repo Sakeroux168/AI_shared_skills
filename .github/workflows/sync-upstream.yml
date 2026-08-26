@@ -1,0 +1,71 @@
+name: Review upstream skill update
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-gpt-image-2-style-library
+  cancel-in-progress: false
+
+jobs:
+  detect-and-propose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Detect upstream commit
+        id: check
+        run: python scripts/check_upstream.py --json --github-output "$GITHUB_OUTPUT"
+
+      - name: Build reviewed synchronization branch
+        if: steps.check.outputs.update_available == 'true'
+        id: sync
+        env:
+          REMOTE_COMMIT: ${{ steps.check.outputs.remote_commit }}
+        run: |
+          short_commit="$(printf '%s' "$REMOTE_COMMIT" | cut -c1-12)"
+          branch="sync/gpt-image-2-style-library-$short_commit"
+          if git ls-remote --exit-code origin "refs/heads/$branch" >/dev/null 2>&1; then
+            git fetch origin "$branch"
+            git switch --track -c "$branch" "origin/$branch"
+          else
+            git switch -c "$branch"
+            python scripts/sync_upstream.py --to-commit "$REMOTE_COMMIT"
+            python scripts/validate_repository.py
+            python -m unittest discover -s tests -v
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -- README.md SKILLS.md SOURCES.md THIRD_PARTY_NOTICES.md registry/skills.json registry/sources.json skills/gpt-image-2-style-library sources/awesome-gpt-image-2 reports/sync
+            git commit -m "sync: awesome-gpt-image-2 $short_commit"
+            git push --set-upstream origin "$branch"
+          fi
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Open or reuse draft pull request
+        if: steps.check.outputs.update_available == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.sync.outputs.branch }}
+          REMOTE_COMMIT: ${{ steps.check.outputs.remote_commit }}
+        run: |
+          gh pr view "$BRANCH" --json url >/dev/null 2>&1 || \
+          gh pr create \
+            --draft \
+            --base main \
+            --head "$BRANCH" \
+            --title "sync: awesome-gpt-image-2 ${REMOTE_COMMIT:0:12}" \
+            --body "Controlled upstream refresh to $REMOTE_COMMIT. Affected skills were automatically downgraded to experimental. Automated integrity and five-domain prompt tests passed, but required manual acceptance and an explicit reviewed promotion with a commit-bound trust attestation are still required before trusted status. Review source, rights metadata, skill, manifest, attribution, and the knowledge-count delta in the sync report. Auto-merge is not enabled."

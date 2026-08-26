@@ -1,0 +1,43 @@
+[
+  {
+    "id": "ui-app",
+    "query": "为手机银行 App 设计一张深色科技感仪表盘 UI 截图，包含余额卡片、交易列表和底部导航。",
+    "expected_template": "ui-screenshot-system",
+    "expected_category": "UI & Interfaces",
+    "expected_style": "UI",
+    "expected_scene": "Tech"
+  },
+  {
+    "id": "poster",
+    "query": "制作一张夏日音乐节活动海报，主标题必须醒目，适合社交媒体发布。",
+    "expected_template": "poster-layout-system",
+    "expected_category": "Posters & Typography",
+    "expected_style": "Poster",
+    "expected_scene": "Social"
+  },
+  {
+    "id": "product-commerce",
+    "query": "生成高端香水商品主图和电商广告视觉，突出玻璃瓶材质、品牌卖点和商业灯光。",
+    "expected_template": "product-commerce-visual",
+    "expected_category": "Products & E-commerce",
+    "expected_style": "Product",
+    "expected_scene": "Commerce"
+  },
+  {
+    "id": "infographic",
+    "query": "做一张科普信息图，分五个模块解释大模型训练流程，带短标签、箭头和清晰层级。",
+    "expected_template": "infographic-engine",
+    "expected_category": "Charts & Infographics",
+    "expected_style": "Infographic",
+    "expected_scene": "Education"
+  },
+  {
+    "id": "realistic-photo",
+    "query": "拍摄一张时尚人像写实摄影作品，85mm 镜头，窗边自然光，保留真实皮肤纹理。",
+    "expected_template": "realistic-photography",
+    "expected_category": "Photography & Realism",
+    "expected_style": "Realistic",
+    "expected_scene": "Fashion"
+  }
+]
+
