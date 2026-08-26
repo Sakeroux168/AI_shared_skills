@@ -60,10 +60,17 @@ catch {
 if ($repoOk) {
     Write-Host ('  当前仓库路径：' + $script:Ctx.Root)
     Add-Result 'AI_shared_skills 路径' 'PASS' $script:Ctx.Root
-    foreach ($s in (Get-AissActiveSkills -RegistryData $script:Reg.Data)) {
-        $trust = $s.trust_status
-        if ($trust -eq 'trusted') { Add-Result ("Registry · " + $s.name) 'PASS' ("status={0} trust={1} upstream={2}" -f $s.local.status, $trust, $s.upstream_commit) }
-        else { Add-Result ("Registry · " + $s.name) 'WARN' ("trust={0}" -f $trust) '该 Skill 未通过信任审核，一键配置不会安装它到 Codex。' }
+    foreach ($s in $script:Reg.Data.skills) {
+        $label = "Registry · " + $s.name
+        if (Test-AissDeployable $s) {
+            Add-Result $label 'PASS' ("status={0} trust={1} upstream={2}" -f $s.local.status, $s.trust_status, $s.upstream_commit)
+        }
+        elseif ($s.local.status -eq 'active') {
+            Add-Result $label 'WARN' ("status=active trust={0}：不满足自动部署规则，不会安装进 Codex" -f $s.trust_status) '该 Skill 处于 experimental/未信任状态；Hermes/DSH direct-read 仍可见，但一键配置不会把它装进 Codex。'
+        }
+        else {
+            Add-Result $label 'SKIP' ("status={0}：已停用，不参与部署" -f $s.local.status)
+        }
     }
 }
 
@@ -181,7 +188,8 @@ console.log(JSON.stringify({ ok: !!full.content, bytes: full.content ? full.cont
 await p.dispose();
 "@
                         [System.IO.File]::WriteAllText($probe, $code, (New-Object System.Text.UTF8Encoding($false)))
-                        $firstActive = (Get-AissActiveSkills -RegistryData $script:Reg.Data) | Select-Object -First 1
+                        $firstActive = (Get-AissDeployableSkills -RegistryData $script:Reg.Data) | Select-Object -First 1
+                        if (-not $firstActive) { throw 'Registry 中没有可部署 Skill' }
                         $out = & $node.Source $probe $pkg $script:Ctx.SkillsPath $firstActive.name 2>$null
                         Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue
                         $j = $out | Where-Object { $_ -match '^\{' } | Select-Object -Last 1
@@ -217,7 +225,7 @@ if (-not $codex.Installed) {
     Add-Result 'Codex' 'SKIP' '未检测到安装' '如需使用 Codex Skills：先安装 Codex，再重跑一键配置。'
 }
 elseif ($repoOk) {
-    foreach ($skill in (Get-AissActiveSkills -RegistryData $script:Reg.Data)) {
+    foreach ($skill in (Get-AissDeployableSkills -RegistryData $script:Reg.Data)) {
         $src = Join-Path $script:Ctx.SkillsPath $skill.name
         $dst = Join-Path $codex.SkillsDir $skill.name
         if (-not (Test-Path -LiteralPath $dst)) {

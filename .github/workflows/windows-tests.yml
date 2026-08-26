@@ -1,0 +1,29 @@
+name: Windows fixture tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  windows-fixtures:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python (for strict YAML validation in tests)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: python -m pip install pyyaml
+
+      - name: Run PowerShell fixture regression tests
+        shell: pwsh
+        run: ./windows/tests/run-fixture-tests.ps1

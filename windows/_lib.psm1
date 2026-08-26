@@ -61,6 +61,18 @@ function Get-AissActiveSkills {
     @($RegistryData.skills | Where-Object { $_.local.status -eq 'active' })
 }
 
+# Single deployment policy shared by bootstrap and doctor:
+# a skill is auto-deployed only when local.status == 'active' AND trust_status == 'trusted'.
+function Test-AissDeployable {
+    param([Parameter(Mandatory)] $Skill)
+    return ($null -ne $Skill.local -and $Skill.local.status -eq 'active' -and $Skill.trust_status -eq 'trusted')
+}
+
+function Get-AissDeployableSkills {
+    param([Parameter(Mandatory)] $RegistryData)
+    @($RegistryData.skills | Where-Object { Test-AissDeployable $_ })
+}
+
 function Get-NormalizedDir {
     param([AllowNull()][string] $Path)
     if ([string]::IsNullOrWhiteSpace($Path)) { return '' }
@@ -219,68 +231,93 @@ function Update-HermesExternalDirs {
         return 'exists'
     }
     $nl = if ($text -contains "`r`n") { "`r`n" } else { "`n" }
-    $lines = $text -split "`r?`n"
-    $out = New-Object System.Collections.Generic.List[string]
-    $inSkills = $false
-    $inserted = $false
+    $lines = @($text -split "`r?`n")
+
+    # locate the FIRST top-level skills: block
     $skillsIdx = -1
     for ($i = 0; $i -lt $lines.Count; $i++) {
-        if ($lines[$i] -match '^skills:\s*(?:#.*)?$') { $inSkills = $true; $skillsIdx = $i }
-        elseif ($inSkills -and $lines[$i] -match '^[A-Za-z_][A-Za-z0-9_.-]*:\s*(?:#.*)?$') { $inSkills = $false }
+        if ($lines[$i] -match '^skills:\s*(?:#.*)?$') { $skillsIdx = $i; break }
     }
+
     if ($skillsIdx -ge 0) {
-        for ($i = 0; $i -lt $lines.Count; $i++) {
-            [void]$out.Add($lines[$i])
-            if ($i -eq $skillsIdx) {
-                # find whether an external_dirs key already exists inside the skills block
-                $end = $lines.Count
-                for ($j = $i + 1; $j -lt $lines.Count; $j++) {
-                    if ($lines[$j] -match '^[A-Za-z_][A-Za-z0-9_.-]*:\s*(?:#.*)?$') { $end = $j; break }
-                }
-                $extIdx = -1
-                $lastItem = -1
-                for ($j = $i + 1; $j -lt $end; $j++) {
-                    if ($lines[$j] -match '^(\s+)external_dirs:') { $extIdx = $j }
-                    if ($extIdx -ge 0 -and $j -gt $extIdx -and $lines[$j] -match '^\s*-\s+') { $lastItem = $j }
-                }
-                if ($extIdx -ge 0) {
-                    if ($lines[$extIdx] -match '^(\s+)external_dirs:\s*\[(.*)\]\s*$') {
-                        # inline flow-style list: convert to block form including the new dir
-                        [void]$out.Add($lines[$i])
-                        $kwIndent = $Matches[1]
-                        [void]$out.Add("${kwIndent}external_dirs:")
-                        foreach ($seg in $Matches[2].Split(',')) {
-                            $v = $seg.Trim()
-                            if ($v) { [void]$out.Add("    - $v") }
-                        }
-                        [void]$out.Add(("    - {0}" -f $quoted))
-                        $i = $extIdx
-                    }
-                    else {
-                        $at = if ($lastItem -gt $extIdx) { $lastItem } else { $extIdx }
-                        for ($k = $i + 1; $k -le $at; $k++) { [void]$out.Add($lines[$k]) }
-                        [void]$out.Add(("    - {0}" -f $quoted))
-                        $i = $at
-                    }
-                    $inserted = $true
-                }
-                else {
-                    [void]$out.Add("  external_dirs:")
-                    [void]$out.Add(("    - {0}" -f $quoted))
-                    $inserted = $true
-                }
+        $end = $lines.Count
+        for ($j = $skillsIdx + 1; $j -lt $lines.Count; $j++) {
+            if ($lines[$j] -match '^[A-Za-z_][A-Za-z0-9_.-]*:\s*(?:#.*)?$') { $end = $j; break }
+        }
+
+        # locate external_dirs inside the skills block
+        $extIdx = -1
+        $extIndentLen = 0
+        $inlineRest = ''
+        for ($j = $skillsIdx + 1; $j -lt $end; $j++) {
+            if ($lines[$j] -match '^(\s+)external_dirs:\s*(.*)$') {
+                $extIdx = $j
+                $extIndentLen = $Matches[1].Length
+                $inlineRest = $Matches[2].Trim()
+                break
             }
         }
-        if (-not $inserted) { throw 'Hermes 配置解析失败：未能插入 external_dirs' }
+
+        $block = New-Object System.Collections.Generic.List[string]
+        [void]$block.Add($lines[$skillsIdx])
+
+        if ($extIdx -ge 0) {
+            # children before external_dirs stay in place
+            for ($k = $skillsIdx + 1; $k -lt $extIdx; $k++) { [void]$block.Add($lines[$k]) }
+
+            # gather existing dir values
+            $oldValues = New-Object System.Collections.Generic.List[string]
+            $stop = $extIdx + 1
+            if ($inlineRest.StartsWith('[') -and $inlineRest.EndsWith(']')) {
+                foreach ($seg in $inlineRest.Trim('[', ']').Split(',')) {
+                    $v = $seg.Trim()
+                    if ($v) { [void]$oldValues.Add($v) }
+                }
+                $stop = $extIdx + 1
+            }
+            else {
+                $k = $extIdx + 1
+                while ($k -lt $end) {
+                    $l = $lines[$k]
+                    if ($l.Trim() -eq '') { $k++; continue }
+                    if ($l -match '^(\s*)-\s+(.+)$' -and $Matches[1].Length -gt $extIndentLen) {
+                        [void]$oldValues.Add($Matches[2].Trim())
+                        $k++
+                    }
+                    else { break }
+                }
+                $stop = $k
+            }
+
+            [void]$block.Add((' ' * $extIndentLen) + 'external_dirs:')
+            foreach ($v in $oldValues) { [void]$block.Add("    - $v") }
+            [void]$block.Add(("    - {0}" -f $quoted))
+
+            # children after the external_dirs list stay in place
+            for ($k = $stop; $k -lt $end; $k++) { [void]$block.Add($lines[$k]) }
+        }
+        else {
+            [void]$block.Add('  external_dirs:')
+            [void]$block.Add(("    - {0}" -f $quoted))
+            for ($k = $skillsIdx + 1; $k -lt $end; $k++) { [void]$block.Add($lines[$k]) }
+        }
+
+        $out = New-Object System.Collections.Generic.List[string]
+        for ($k = 0; $k -lt $skillsIdx; $k++) { [void]$out.Add($lines[$k]) }
+        foreach ($b in $block) { [void]$out.Add($b) }
+        for ($k = $end; $k -lt $lines.Count; $k++) { [void]$out.Add($lines[$k]) }
+        Write-TextAtomic -Path $ConfigPath -Text (($out -join $nl) + $nl)
+        return 'updated'
     }
-    else {
-        foreach ($l in $lines) { [void]$out.Add($l) }
-        while ($out.Count -gt 0 -and $out[$out.Count - 1].Trim() -eq '') { $out.RemoveAt($out.Count - 1) }
-        [void]$out.Add('skills:')
-        [void]$out.Add('  external_dirs:')
-        [void]$out.Add(("    - {0}" -f $quoted))
-    }
-    Write-TextAtomic -Path $ConfigPath -Text (($out -join $nl) + $nl)
+
+    # no skills: block anywhere — append one
+    $out2 = New-Object System.Collections.Generic.List[string]
+    foreach ($l in $lines) { [void]$out2.Add($l) }
+    while ($out2.Count -gt 0 -and $out2[$out2.Count - 1].Trim() -eq '') { $out2.RemoveAt($out2.Count - 1) }
+    [void]$out2.Add('skills:')
+    [void]$out2.Add('  external_dirs:')
+    [void]$out2.Add(("    - {0}" -f $quoted))
+    Write-TextAtomic -Path $ConfigPath -Text (($out2 -join $nl) + $nl)
     return 'updated'
 }
 
@@ -447,7 +484,37 @@ function Update-DshCustomSkillDirs {
         Write-TextAtomic -Path $PresetPath -Text (($out -join $nl) + $tail)
         return 'updated'
     }
-    # no customSkillDirs yet: insert a config block right after this entry's name line
+    # no customSkillDirs yet — if a config: mapping already exists, extend it in place
+    $cfgIdx = -1
+    $cfgIndentLen = 0
+    for ($j = $entryStart; $j -lt $entryEnd; $j++) {
+        if ($lines[$j] -match '^(\s+)config:\s*$') { $cfgIdx = $j; $cfgIndentLen = $Matches[1].Length; break }
+    }
+    if ($cfgIdx -ge 0) {
+        # find the end of the config mapping: first non-blank line indented <= the config key
+        $cfgEnd = $entryEnd
+        for ($k = $cfgIdx + 1; $k -lt $entryEnd; $k++) {
+            if ($lines[$k].Trim() -eq '') { continue }
+            $ind = ($lines[$k] -replace '^(\s*).*', '$1').Length
+            if ($ind -le $cfgIndentLen) { $cfgEnd = $k; break }
+        }
+        # anchor on the last non-blank line of the mapping so existing options stay first
+        $anchor = $cfgIdx
+        for ($k = $cfgEnd - 1; $k -gt $cfgIdx; $k--) {
+            if ($lines[$k].Trim() -ne '') { $anchor = $k; break }
+        }
+        $b1 = (' ' * $cfgIndentLen) + '  '
+        $b2 = (' ' * $cfgIndentLen) + '    '
+        $out = New-Object System.Collections.Generic.List[string]
+        for ($k = 0; $k -le $anchor; $k++) { [void]$out.Add($lines[$k]) }
+        [void]$out.Add("${b1}customSkillDirs:")
+        [void]$out.Add("$b2- $quoted")
+        for ($k = $anchor + 1; $k -lt $lines.Count; $k++) { [void]$out.Add($lines[$k]) }
+        Write-TextAtomic -Path $PresetPath -Text (($out -join $nl) + $nl)
+        return 'added-customskilldirs'
+    }
+
+    # no config at all: create one right after this entry's name line
     $nameIdx = -1
     for ($j = $entryStart + 1; $j -lt $entryEnd; $j++) {
         if ($lines[$j] -match '^\s+name:\s*.+\s*$') { $nameIdx = $j; break }

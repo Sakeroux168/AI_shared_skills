@@ -55,10 +55,16 @@ try {
     $reg = Read-AissRegistry -Path $ctx.RegistryPath
     if (-not $reg.Ok) { throw $reg.Error }
     $active = Get-AissActiveSkills -RegistryData $reg.Data
+    $deploy = Get-AissDeployableSkills -RegistryData $reg.Data
+    foreach ($s in $active) {
+        if (-not (Test-AissDeployable $s)) {
+            $script:Details.Add(("  跳过自动安装（trust 规则）：{0} — status={1} trust={2}" -f $s.name, $s.local.status, $s.trust_status))
+        }
+    }
     $repoSkills = $ctx.SkillsPath
     $script:ComponentStatus['AI_shared_skills Registry'] = 'PASS'
     Write-Host ("  仓库：" + $ctx.Root)
-    Write-Host ("  Registry 有效，启用中的专业 Skill：" + (@($active).Count) + " 个")
+    Write-Host ("  Registry 有效；启用中 {0} 个，其中满足自动部署条件（active+trusted）{1} 个" -f (@($active).Count), (@($deploy).Count))
 }
 catch {
     Write-Host ("  错误：" + $_.Exception.Message)
@@ -165,7 +171,7 @@ if ($canContinue) {
         }
         else {
             Write-Host ("  Codex home：{0}（{1}）" -f $codex.Home, $codex.Source)
-            foreach ($skill in $active) {
+            foreach ($skill in $deploy) {
                 $src = Join-Path $repoSkills $skill.name
                 if (-not (Test-Path -LiteralPath (Join-Path $src 'SKILL.md'))) {
                     Set-ComponentStatus -Name $skill.name -Status 'WARN' -Note "源目录缺少 SKILL.md：$src"
@@ -179,6 +185,10 @@ if ($canContinue) {
                 }
                 Set-ComponentStatus -Name 'Codex' -Status 'PASS'
             }
+            if (@($deploy).Count -eq 0) {
+                Write-Host '  Registry 中暂无满足部署条件（active+trusted）的 Skill。'
+                Set-ComponentStatus -Name 'Codex' -Status 'PASS' -Note '无可部署 Skill'
+            }
         }
     }
     catch {
@@ -191,7 +201,7 @@ if ($canContinue) {
 Write-Host ''
 Write-Host '============================== 配置结果 =============================='
 $skillNames = @()
-if ($canContinue -and $active) { $skillNames = @($active | ForEach-Object { $_.name }) }
+if ($canContinue -and $deploy) { $skillNames = @($deploy | ForEach-Object { $_.name }) }
 foreach ($k in $script:ComponentStatus.Keys) {
     if ($skillNames -contains $k) { continue }
     Write-Host (Format-StatusLine -Name $k -Status $script:ComponentStatus[$k])
