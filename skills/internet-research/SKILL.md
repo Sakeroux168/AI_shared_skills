@@ -11,7 +11,7 @@ Produce decision-grade internet research, not a source dump.
 
 1. Check the current research capability before relying on a platform. Prefer `agent-reach doctor --json` when Agent Reach is available; use `opencli doctor` before browser-backed reads.
 2. Use the backend that is actually healthy in the current environment. Agent Reach is the selector/router; call the selected upstream tool directly.
-3. Do not install or repair runtimes, log into accounts, export cookies, or change proxy/TLS/firewall/browser security settings merely to finish a research request. Those are separate setup or repair actions.
+3. Do not install or repair runtimes, log into accounts, export cookies, or change proxy/TLS/firewall/browser security settings merely to finish a research request. Never export or print cookies merely to make research succeed. Those are separate setup or repair actions.
 4. One unavailable platform must not block the entire research task. Record the gap, use independent alternatives, and lower confidence only when the missing evidence is material.
 5. Read `references/runtime-contract.md` when platform health, login state, backend choice, or runtime provenance matters.
 
