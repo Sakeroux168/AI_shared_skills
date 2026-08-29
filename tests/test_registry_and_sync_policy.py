@@ -36,25 +36,35 @@ class RegistryScaleAndRightsTests(unittest.TestCase):
         sources = load_json(ROOT / "registry" / "sources.json")
         write_json(root / "registry" / "skills.json", skills)
         write_json(root / "registry" / "sources.json", sources)
-        write_json(
-            root / "sources" / "awesome-gpt-image-2" / "source.lock.json",
-            load_json(ROOT / "sources" / "awesome-gpt-image-2" / "source.lock.json"),
-        )
-        source_root = root / "sources" / "awesome-gpt-image-2"
-        (source_root / "LICENSE").write_text("fixture license\n", encoding="utf-8")
-        disclaimer = source_root / "snapshot" / "docs" / "disclaimer.md"
-        disclaimer.parent.mkdir(parents=True, exist_ok=True)
-        disclaimer.write_text("fixture disclaimer\n", encoding="utf-8")
-        attestation = skills["skills"][0]["trust_attestation"]
-        acceptance_report = root / attestation["acceptance_report"]
-        acceptance_report.parent.mkdir(parents=True, exist_ok=True)
-        acceptance_report.write_text(
-            (
-                f"Accepted Skill {attestation['skill_name']} at upstream commit "
-                f"{attestation['accepted_commit']}\n"
-            ),
-            encoding="utf-8",
-        )
+
+        for source in sources["sources"]:
+            source_id = source["id"]
+            source_root = root / "sources" / source_id
+            source_root.mkdir(parents=True, exist_ok=True)
+            real_lock = ROOT / "sources" / source_id / "source.lock.json"
+            write_json(source_root / "source.lock.json", load_json(real_lock))
+
+            license_path = root / source["license"]["repository_license"]["file"]
+            license_path.parent.mkdir(parents=True, exist_ok=True)
+            license_path.write_text("fixture license\n", encoding="utf-8")
+
+            disclaimer_path = root / source["license"]["content_rights"]["upstream_disclaimer"]
+            disclaimer_path.parent.mkdir(parents=True, exist_ok=True)
+            disclaimer_path.write_text("fixture disclaimer\n", encoding="utf-8")
+
+        for skill in skills["skills"]:
+            if skill["trust_status"] != "trusted":
+                continue
+            attestation = skill["trust_attestation"]
+            acceptance_report = root / attestation["acceptance_report"]
+            acceptance_report.parent.mkdir(parents=True, exist_ok=True)
+            acceptance_report.write_text(
+                (
+                    f"Accepted Skill {attestation['skill_name']} at upstream commit "
+                    f"{attestation['accepted_commit']}\n"
+                ),
+                encoding="utf-8",
+            )
         return skills, sources
 
     def materialize_skill_contract(self, root: Path, skill: dict) -> None:
@@ -80,6 +90,7 @@ class RegistryScaleAndRightsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="registry-multi-") as temp:
             root = Path(temp)
             skills, _ = self.registry_fixture(root)
+            existing_names = [item["name"] for item in skills["skills"]]
             second = copy.deepcopy(skills["skills"][0])
             second["name"] = "second-professional-skill"
             second["description"] = "Second fixture skill backed by the same pinned source."
@@ -111,15 +122,16 @@ class RegistryScaleAndRightsTests(unittest.TestCase):
             validate_registered_skill_directories(validated, root)
             self.assertEqual(
                 [item["name"] for item in validated["skills"]],
-                ["gpt-image-2-style-library", "second-professional-skill"],
+                existing_names + ["second-professional-skill"],
             )
 
     def test_active_skill_rejects_missing_registered_knowledge_path(self) -> None:
         with tempfile.TemporaryDirectory(prefix="registry-paths-") as temp:
             root = Path(temp)
             skills, _ = self.registry_fixture(root)
+            for item in skills["skills"]:
+                self.materialize_skill_contract(root, item)
             skill = skills["skills"][0]
-            self.materialize_skill_contract(root, skill)
             skill["knowledge_source"]["complete_cases"] = "sources/missing/cases.json"
             write_json(root / "registry" / "skills.json", skills)
             validated, _, _ = validate_registries(root)
@@ -182,54 +194,21 @@ class RegistryScaleAndRightsTests(unittest.TestCase):
             source = root / "sources" / "awesome-gpt-image-2"
             snapshot = source / "snapshot"
             library = {
-                "templates": [
-                    {
-                        "id": "one-template",
-                        "anchor": "one-template",
-                        "cover": "/images/template.png",
-                        "exampleCases": [1],
-                    }
-                ],
-                "categories": [
-                    {
-                        "id": "one-category",
-                        "cover": "/images/category.png",
-                    }
-                ],
+                "templates": [{"id": "one-template", "anchor": "one-template", "cover": "/images/template.png", "exampleCases": [1]}],
+                "categories": [{"id": "one-category", "cover": "/images/category.png"}],
                 "styles": [{"value": "one-style"}],
                 "scenes": [{"value": "one-scene"}],
             }
-            cases = {
-                "totalCases": 1,
-                "cases": [
-                    {
-                        "id": 1,
-                        "image": "/images/case.png",
-                        "prompt": "fixture",
-                        "sourceLabel": "fixture-source",
-                    }
-                ],
-            }
+            cases = {"totalCases": 1, "cases": [{"id": 1, "image": "/images/case.png", "prompt": "fixture", "sourceLabel": "fixture-source"}]}
             write_json(snapshot / "data" / "style-library.json", library)
             write_json(snapshot / "data" / "cases.json", cases)
             (snapshot / "docs").mkdir(parents=True, exist_ok=True)
-            (snapshot / "docs" / "templates.md").write_text(
-                '<a name="one-template"></a>\n', encoding="utf-8"
-            )
-            (snapshot / "docs" / "disclaimer.md").write_text(
-                "不主张对第三方原创内容的任何所有权\n不保证第三方内容可用于商业用途\n",
-                encoding="utf-8",
-            )
+            (snapshot / "docs" / "templates.md").write_text('<a name="one-template"></a>\n', encoding="utf-8")
+            (snapshot / "docs" / "disclaimer.md").write_text("不主张对第三方原创内容的任何所有权\n不保证第三方内容可用于商业用途\n", encoding="utf-8")
             generator = snapshot / "scripts" / "generate-style-skill.mjs"
             generator.parent.mkdir(parents=True, exist_ok=True)
             generator.write_text("// fixture\n", encoding="utf-8")
-            upstream_skill = (
-                snapshot
-                / "agents"
-                / "skills"
-                / "gpt-image-2-style-library"
-                / "SKILL.md"
-            )
+            upstream_skill = snapshot / "agents" / "skills" / "gpt-image-2-style-library" / "SKILL.md"
             upstream_skill.parent.mkdir(parents=True, exist_ok=True)
             upstream_skill.write_text("---\nname: fixture\n---\n", encoding="utf-8")
             images = snapshot / "data" / "images"
@@ -237,30 +216,8 @@ class RegistryScaleAndRightsTests(unittest.TestCase):
             (images / "template.png").write_bytes(b"template")
             (images / "category.png").write_bytes(b"category")
             source.mkdir(parents=True, exist_ok=True)
-            (source / "LICENSE").write_text(
-                "MIT License\nCopyright (c) 2026 freestylefly\n",
-                encoding="utf-8",
-            )
-            write_json(
-                source / "case-images.lock.json",
-                {
-                    "commit": COMMIT,
-                    "asset_count": 1,
-                    "assets": [
-                        {
-                            "case_id": 1,
-                            "path": "data/images/case.png",
-                            "blob_sha": "a" * 40,
-                            "vendored": False,
-                            "raw_url": (
-                                "https://raw.githubusercontent.com/example/repo/"
-                                f"{COMMIT}/data/images/case.png"
-                            ),
-                        }
-                    ],
-                },
-            )
-
+            (source / "LICENSE").write_text("MIT License\nCopyright (c) 2026 freestylefly\n", encoding="utf-8")
+            write_json(source / "case-images.lock.json", {"commit": COMMIT, "asset_count": 1, "assets": [{"case_id": 1, "path": "data/images/case.png", "blob_sha": "a" * 40, "vendored": False, "raw_url": "https://raw.githubusercontent.com/example/repo/" + COMMIT + "/data/images/case.png"}]})
             validate_source({"commit": COMMIT}, root)
 
 
@@ -270,27 +227,21 @@ class SyncPolicyTests(unittest.TestCase):
         self.sources = load_json(ROOT / "registry" / "sources.json")
 
     def test_changed_commit_downgrades_only_affected_skills(self) -> None:
+        existing_unrelated = {item["name"]: (item["trust_status"], item["upstream_commit"]) for item in self.skills["skills"] if item["knowledge_source"]["source_id"] != "awesome-gpt-image-2"}
         related = copy.deepcopy(self.skills["skills"][0])
         related["name"] = "second-related-skill"
+        related["trust_attestation"]["skill_name"] = related["name"]
         unrelated = copy.deepcopy(self.skills["skills"][0])
         unrelated["name"] = "unrelated-skill"
         unrelated["knowledge_source"]["source_id"] = "another-source"
         self.skills["skills"].extend([related, unrelated])
         new_commit = "f" * 40
-
-        affected = apply_upstream_commit(
-            self.skills,
-            self.sources,
-            source_id="awesome-gpt-image-2",
-            old_commit=COMMIT,
-            commit=new_commit,
-        )
-
-        changed, also_changed, unchanged = self.skills["skills"]
-        self.assertEqual(
-            affected,
-            ["gpt-image-2-style-library", "second-related-skill"],
-        )
+        affected = apply_upstream_commit(self.skills, self.sources, source_id="awesome-gpt-image-2", old_commit=COMMIT, commit=new_commit)
+        by_name = {item["name"]: item for item in self.skills["skills"]}
+        changed = by_name["gpt-image-2-style-library"]
+        also_changed = by_name["second-related-skill"]
+        unchanged = by_name["unrelated-skill"]
+        self.assertEqual(affected, ["gpt-image-2-style-library", "second-related-skill"])
         self.assertEqual(changed["trust_status"], "experimental")
         self.assertEqual(changed["trust_review"]["required_after_commit"], new_commit)
         self.assertEqual(changed["upstream_commit"], new_commit)
@@ -299,37 +250,20 @@ class SyncPolicyTests(unittest.TestCase):
         self.assertEqual(also_changed["upstream_commit"], new_commit)
         self.assertEqual(unchanged["trust_status"], "trusted")
         self.assertEqual(unchanged["upstream_commit"], COMMIT)
-        self.assertEqual(self.sources["sources"][0]["commit"], new_commit)
+        for name, expected in existing_unrelated.items():
+            item = by_name[name]
+            self.assertEqual((item["trust_status"], item["upstream_commit"]), expected)
+        awesome_source = next(source for source in self.sources["sources"] if source["id"] == "awesome-gpt-image-2")
+        self.assertEqual(awesome_source["commit"], new_commit)
 
     def test_same_commit_does_not_downgrade_trusted_skill(self) -> None:
-        apply_upstream_commit(
-            self.skills,
-            self.sources,
-            source_id="awesome-gpt-image-2",
-            old_commit=COMMIT,
-            commit=COMMIT,
-        )
-        skill = self.skills["skills"][0]
+        apply_upstream_commit(self.skills, self.sources, source_id="awesome-gpt-image-2", old_commit=COMMIT, commit=COMMIT)
+        skill = next(item for item in self.skills["skills"] if item["name"] == "gpt-image-2-style-library")
         self.assertEqual(skill["trust_status"], "trusted")
         self.assertNotIn("trust_review", skill)
 
     def test_count_changes_are_rendered_as_sync_report_deltas(self) -> None:
-        table = format_knowledge_count_table(
-            {
-                "templates": 22,
-                "categories": 13,
-                "styles": 19,
-                "scenes": 10,
-                "cases": 529,
-            },
-            {
-                "templates": 24,
-                "categories": 13,
-                "styles": 18,
-                "scenes": 11,
-                "cases": 540,
-            },
-        )
+        table = format_knowledge_count_table({"templates": 22, "categories": 13, "styles": 19, "scenes": 10, "cases": 529}, {"templates": 24, "categories": 13, "styles": 18, "scenes": 11, "cases": 540})
         self.assertIn("| Templates | 22 | 24 | +2 |", table)
         self.assertIn("| Style tags | 19 | 18 | -1 |", table)
         self.assertIn("| Case prompts | 529 | 540 | +11 |", table)

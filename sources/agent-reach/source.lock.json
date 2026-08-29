@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0.0",
+  "source_id": "agent-reach",
+  "repo": "https://github.com/Panniantong/Agent-Reach",
+  "branch": "main",
+  "commit": "06c202b03400a7d31886bf4399213706da1a0324",
+  "sync_mode": "review",
+  "snapshot_policy": "minimal-provenance-and-rights-note",
+  "synced_at": "2026-08-29T16:44:00+00:00"
+}
