@@ -1,8 +1,8 @@
 # internet-research manual forward acceptance
 
-`internet-research` remains `experimental` until its workflow is forward-tested in an intended harness and the result is recorded in an acceptance report.
+`internet-research` completed its Windows forward acceptance on 2026-08-30. The accepted result is recorded in `reports/acceptance/2026-08-30-internet-research-v1.md`.
 
-The existing Agent Reach/OpenCLI Stage 1 Windows acceptance proves runtime feasibility. This checklist validates the new Skill's behavior.
+The existing Agent Reach/OpenCLI Stage 1 Windows acceptance proves runtime feasibility. This checklist validates the Skill's research behavior and remains the gate to repeat after materially changing its workflow or accepted runtime.
 
 ## Safety gate
 
@@ -71,7 +71,7 @@ PASS when the agent:
 
 ## Promotion gate
 
-Promote `internet-research` to `trusted` only after:
+Promote or retain `internet-research` as `trusted` only after:
 
 1. `python scripts/validate_repository.py` passes;
 2. `python -m unittest discover -s tests -v` passes;
@@ -79,4 +79,4 @@ Promote `internet-research` to `trusted` only after:
 4. the acceptance report records runtime versions, platforms exercised, observed limitations, and READ-only compliance;
 5. the trust attestation is bound to the current registered Agent Reach commit.
 
-Promotion is a reviewed commit in the same PR or a follow-up reviewed PR; never infer trust from runtime installation alone.
+The 2026-08-30 acceptance satisfied this gate. Future material workflow/runtime changes must repeat the relevant reviewed acceptance rather than inheriting trust automatically.
