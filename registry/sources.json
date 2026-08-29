@@ -64,6 +64,59 @@
         "large optional case images are represented by a blob-locked manifest unless explicitly hydrated",
         "upstream disclaimer and separate third-party content-rights status are preserved without blanket MIT relicensing"
       ]
+    },
+    {
+      "id": "agent-reach",
+      "repository": "https://github.com/Panniantong/Agent-Reach",
+      "branch": "main",
+      "commit": "06c202b03400a7d31886bf4399213706da1a0324",
+      "sync_mode": "review",
+      "author": "Panniantong / Agent Eyes contributors",
+      "license": {
+        "repository_license": {
+          "spdx": "MIT",
+          "copyright": "Copyright (c) 2025 Agent Eyes",
+          "file": "sources/agent-reach/LICENSE",
+          "verified_from": "LICENSE at the locked upstream commit"
+        },
+        "content_rights": {
+          "status": "mixed",
+          "upstream_disclaimer": "sources/agent-reach/snapshot/docs/rights-and-platform-note.md",
+          "scope": "Agent Reach source code and repository documentation are recorded under the upstream MIT license. Data retrieved from third-party websites, social platforms, repositories, comments, media, and user sessions remains subject to the originating source's rights and platform terms and is not relicensed by Agent Reach or AI_shared_skills.",
+          "attribution": "Preserve source URLs and attribution for research evidence; preserve Agent Reach copyright/license notices when redistributing upstream code or substantial documentation.",
+          "commercial_use": "The Agent Reach MIT license permits use of the software, but does not grant commercial-use rights to third-party platform content retrieved through it."
+        }
+      },
+      "snapshot": {
+        "path": "sources/agent-reach/snapshot",
+        "selection": "minimal-provenance",
+        "includes": [
+          "rights and platform-content boundary note",
+          "pinned source/runtime provenance used by internet-research"
+        ],
+        "excluded_but_managed": [
+          {
+            "content": "Agent Reach executable/runtime installation",
+            "reason": "runtime is installed independently on the user machine and is not vendored into this repository"
+          },
+          {
+            "content": "third-party platform data and browser sessions",
+            "reason": "research data is fetched at runtime and is never vendored as a source snapshot"
+          }
+        ]
+      },
+      "update_strategy": {
+        "detect": "review upstream main and release notes before changing internet-research routing guidance",
+        "sync": "update the source lock, provenance references, and affected Skill on a dedicated review branch",
+        "review": "draft pull request with runtime regression acceptance when behavior changes",
+        "rollback": "revert the reviewed source/Skill update",
+        "auto_merge": false
+      },
+      "local_modifications": [
+        "internet-research adds a local decision-grade research method and evidence model rather than copying the upstream Agent Reach Skill verbatim",
+        "OpenCLI is tracked as a verified runtime dependency in the Skill reference; its code is not vendored here",
+        "all social-platform operations are read-only by default and login/cookie boundaries are stricter than generic runtime capability"
+      ]
     }
   ]
 }

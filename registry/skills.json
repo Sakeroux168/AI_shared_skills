@@ -91,6 +91,91 @@
         "manual image-output and Windows harness acceptance tracked separately",
         "reports/acceptance/2026-08-26-v1.md"
       ]
+    },
+    {
+      "name": "internet-research",
+      "description": "Conduct decision-grade multi-source internet and community research using available read-only web, GitHub, Reddit, X/Twitter, Bilibili, Xiaohongshu, comments, replies, and thread backends; use for research, verification, comparison, community sentiment, negative-evidence searches, and requests such as 上网大量查 or 看看社区怎么说.",
+      "source_repository": "https://github.com/Panniantong/Agent-Reach",
+      "upstream_branch": "main",
+      "upstream_commit": "06c202b03400a7d31886bf4399213706da1a0324",
+      "local": {
+        "version": "0.1.0",
+        "status": "active"
+      },
+      "category": "research/community-intelligence",
+      "capabilities": [
+        "multi-source internet research planning",
+        "official-source and primary-source verification",
+        "GitHub issue PR comment and review-thread research",
+        "Reddit X/Twitter Bilibili Xiaohongshu community research",
+        "comment reply and nested-thread evidence gathering",
+        "negative evidence and contradiction search",
+        "source triangulation and confidence labeling",
+        "graceful degradation when one platform or backend fails"
+      ],
+      "dependencies": {
+        "agent_runtime": "plain Markdown skill; routes through already-available Agent Reach backends and direct read-only tools",
+        "required_runtime_packages": [],
+        "verified_windows_runtime": [
+          "Agent Reach v1.5.0",
+          "OpenCLI v1.8.7",
+          "OpenCLI Browser Bridge extension v1.0.23"
+        ],
+        "optional_tools": [
+          "gh CLI for GitHub repository, issue, PR, comment, review, and thread reads",
+          "bili-cli for Bilibili search, video metadata, and top-level comments",
+          "OpenCLI for existing logged-in browser-session reads including Xiaohongshu, Reddit, X/Twitter, and nested replies",
+          "mcporter/Exa or another available web-search backend for broad web discovery"
+        ]
+      },
+      "knowledge_source": {
+        "source_id": "agent-reach",
+        "bundled_reference": "skills/internet-research/references/runtime-contract.md",
+        "evidence_method": "skills/internet-research/references/evidence-method.md",
+        "source_guide": "skills/internet-research/references/source-knowledge.md"
+      },
+      "update_strategy": {
+        "mode": "review",
+        "detect": "review Agent Reach main and OpenCLI release/runtime changes before changing routing guidance",
+        "sync": "manually update pinned provenance, runtime contract, tests, and acceptance evidence on a dedicated branch",
+        "branch_prefix": "sync/internet-research-",
+        "requires_tests": true,
+        "requires_pull_request": true,
+        "auto_merge": false
+      },
+      "compatible_harnesses": [
+        {
+          "name": "Codex",
+          "status": "unknown",
+          "scope": "Skill-specific forward acceptance pending; Stage 1 runtime capability was proven separately on Windows"
+        },
+        {
+          "name": "Claude Code",
+          "status": "theoretical",
+          "scope": "plain Markdown skill; runtime tool availability must be checked per host"
+        },
+        {
+          "name": "Hermes",
+          "status": "unknown",
+          "scope": "shared-skill discovery path exists; this Skill has not yet completed forward acceptance"
+        },
+        {
+          "name": "DeepSeek Harness",
+          "status": "unknown",
+          "scope": "shared-skill discovery path exists; this Skill has not yet completed forward acceptance"
+        },
+        {
+          "name": "generic .agents/skills",
+          "status": "verified",
+          "scope": "frontmatter and progressive-reference filesystem contract"
+        }
+      ],
+      "trust_status": "experimental",
+      "trust_evidence": [
+        "Windows Stage 1 runtime acceptance completed for Web, GitHub, Bilibili, Twitter/X, Xiaohongshu, Reddit, comments/replies, and Browser Bridge",
+        "Agent Reach v1.5.0 and OpenCLI v1.8.7 were stable across fresh Windows shells during runtime acceptance",
+        "Skill-specific forward acceptance and harness promotion remain pending before trusted status"
+      ]
     }
   ]
 }
