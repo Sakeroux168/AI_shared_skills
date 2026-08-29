@@ -146,8 +146,8 @@
       "compatible_harnesses": [
         {
           "name": "Codex",
-          "status": "unknown",
-          "scope": "Skill-specific forward acceptance pending; Stage 1 runtime capability was proven separately on Windows"
+          "status": "verified",
+          "scope": "Windows forward acceptance Scenarios A-D passed against the registered Skill workflow and accepted runtime"
         },
         {
           "name": "Claude Code",
@@ -157,12 +157,12 @@
         {
           "name": "Hermes",
           "status": "unknown",
-          "scope": "shared-skill discovery path exists; this Skill has not yet completed forward acceptance"
+          "scope": "shared-skill discovery path exists; Skill-specific forward acceptance has not been run in Hermes"
         },
         {
           "name": "DeepSeek Harness",
           "status": "unknown",
-          "scope": "shared-skill discovery path exists; this Skill has not yet completed forward acceptance"
+          "scope": "shared-skill discovery path exists; Skill-specific forward acceptance has not been run in DSH"
         },
         {
           "name": "generic .agents/skills",
@@ -170,11 +170,21 @@
           "scope": "frontmatter and progressive-reference filesystem contract"
         }
       ],
-      "trust_status": "experimental",
+      "trust_status": "trusted",
+      "trust_attestation": {
+        "skill_name": "internet-research",
+        "accepted_commit": "06c202b03400a7d31886bf4399213706da1a0324",
+        "acceptance_report": "reports/acceptance/2026-08-30-internet-research-v1.md",
+        "accepted_at": "2026-08-30",
+        "scope": "Windows decision-grade multi-source research workflow, Scenarios A-D, graceful backend degradation, READ-only safety boundary, and automated repository validation"
+      },
       "trust_evidence": [
         "Windows Stage 1 runtime acceptance completed for Web, GitHub, Bilibili, Twitter/X, Xiaohongshu, Reddit, comments/replies, and Browser Bridge",
         "Agent Reach v1.5.0 and OpenCLI v1.8.7 were stable across fresh Windows shells during runtime acceptance",
-        "Skill-specific forward acceptance and harness promotion remain pending before trusted status"
+        "Skill-specific Windows forward acceptance Scenarios A-D passed on 2026-08-30",
+        "automated repository validation and unittest suite passed on the accepted Windows snapshot",
+        "Scenario C demonstrated graceful degradation when Browser Bridge/Reddit path was unavailable without bypassing security controls",
+        "reports/acceptance/2026-08-30-internet-research-v1.md"
       ]
     }
   ]
