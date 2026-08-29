@@ -6,10 +6,10 @@ This repository answers **what an Agent can do**. It is intentionally separate f
 
 ## V1 status
 
-Two professional capabilities are now registered:
+Two professional capabilities are now registered and trusted:
 
 - `gpt-image-2-style-library` — trusted; derived from `freestylefly/awesome-gpt-image-2` and pinned to commit `685469889fb72fd5adefae45e1645d527edcb5e7`.
-- `internet-research` — experimental; locally authored decision-grade research workflow backed by pinned Agent Reach provenance at `06c202b03400a7d31886bf4399213706da1a0324` and the separately accepted OpenCLI v1.8.7 Windows runtime.
+- `internet-research` — trusted; locally authored decision-grade research workflow backed by pinned Agent Reach provenance at `06c202b03400a7d31886bf4399213706da1a0324` and the accepted OpenCLI v1.8.7 Windows runtime.
 
 The integration has two layers:
 
@@ -61,7 +61,7 @@ Its default workflow is:
 
 The Skill is **READ ONLY by default**. Posting, commenting, reacting, following, saving, publishing, account changes, login/credential changes, or other writes require explicit user confirmation. It does not auto-login, export cookies, or bypass platform/network security to make a research task pass.
 
-Stage 1 Windows acceptance already proved real read-only retrieval for Web, GitHub, Bilibili, X/Twitter, Xiaohongshu, Reddit, comments/replies, and OpenCLI Browser Bridge stability. That runtime proof is recorded in the Skill references, but the Skill remains `experimental` until its own forward-acceptance scenarios pass and a trust attestation is added.
+Stage 1 Windows acceptance proved real read-only retrieval for Web, GitHub, Bilibili, X/Twitter, Xiaohongshu, Reddit, comments/replies, and OpenCLI Browser Bridge stability. On 2026-08-30 the Skill then passed forward-acceptance Scenarios A-D plus automated validation and was promoted to `trusted`; the acceptance record is [reports/acceptance/2026-08-30-internet-research-v1.md](reports/acceptance/2026-08-30-internet-research-v1.md). The forward-acceptance report also records the observed limitation that Browser Bridge was disconnected during Scenario C, so that scenario demonstrated graceful degradation without obtaining a Reddit community sample.
 
 ## Controlled upstream updates
 
@@ -86,7 +86,7 @@ The existing `check_upstream.py` / `sync_upstream.py` pipeline is specialized to
     python scripts/validate_repository.py
     python -m unittest discover -s tests -v
 
-Automated validation covers registry/source contracts, trust policy, installation behavior, the image capability, and the new `internet-research` structure/safety contract. Skill-specific research quality still requires the manual forward acceptance in [tests/internet-research-manual-acceptance.md](tests/internet-research-manual-acceptance.md).
+Automated validation covers registry/source contracts, trust policy, installation behavior, the image capability, and the `internet-research` structure/safety/attestation contract. Research quality is additionally governed by [tests/internet-research-manual-acceptance.md](tests/internet-research-manual-acceptance.md) and its recorded forward-acceptance report.
 
 ## Licensing
 
