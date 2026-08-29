@@ -45,9 +45,9 @@ class PromptAcceptanceTests(unittest.TestCase):
                 self.assertTrue(set(output["example_case_ids"]) <= self.case_ids)
                 self.assertEqual(set(output["prompt"]), REQUIRED_BLOCKS)
                 self.assertTrue(all(value.strip() for value in output["prompt"].values()))
-                self.assertIn("sources/awesome-gpt-image-2", output["source"]["library"])
+                library_path = output["source"]["library"].replace("\\", "/")
+                self.assertIn("sources/awesome-gpt-image-2", library_path)
 
 
 if __name__ == "__main__":
     unittest.main()
-
