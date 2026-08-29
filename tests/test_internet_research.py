@@ -35,7 +35,7 @@ class InternetResearchSkillTests(unittest.TestCase):
         self.assertIn("Never auto-login", text)
         self.assertIn("Never autonomously perform payment", text)
         self.assertIn("negative evidence", text.lower())
-        self.assertIn("never export or print cookies", text)
+        self.assertIn("never export or print cookies", text.lower())
 
     def test_registry_keeps_new_skill_experimental_until_forward_acceptance(self) -> None:
         registry = json.loads((ROOT / "registry" / "skills.json").read_text(encoding="utf-8"))
